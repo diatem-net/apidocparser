@@ -1,0 +1,22 @@
+{
+    "name": "diatem-net/apidocparser",
+    "description": "Propose une interface automatisée de test et d'appel à des services REST gérés avec ApiDoc.",
+    "type": "library",
+    "require": {
+        "diatem-net/jin-filesystem": "^2.0",
+		"diatem-net/jin-utils": "^2.0",
+		"diatem-net/jin-dataformat": "^2.0",
+		"diatem-net/jin-log": "^2.0"
+    },
+    "authors": [
+        {
+            "name": "Loic Gerard",
+            "email": "lgerard@diatem.net"
+        }
+    ],
+	"autoload": {
+        "psr-0": {
+            "Diatem\\ApiDocParser": "src/"
+        }
+    }
+}
