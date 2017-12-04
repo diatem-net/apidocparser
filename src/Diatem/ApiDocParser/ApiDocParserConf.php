@@ -227,7 +227,10 @@ class ApiDocParserConf{
             }
                
         }
-        
+
+
+        ksort($endpoints);
+
         $out = new File('__genconf', true);
         $out->write(Json::encode($endpoints));
 

@@ -186,11 +186,11 @@ class ApiDocParserRender{
                     }else if($type == 'boolean'){
                         echo '<select name="argument?'.$argument['nom'].'">';
                             $selected = '';
-                            if($valeur === true || $valeur === 1 || $valeur === 'true' || $valeur === 'TRUE'){ $selected='selected="selected"'; }
+                            if($valeur === true || $valeur === 1 || $valeur === 'true' || $valeur === 'TRUE' || $valeur === '1'){ $selected='selected="selected"'; }
 
                             echo '<option value="1" '.$selected.'>TRUE</option>';
                             $selected = '';
-                            if($valeur === false || $valeur === 0 || $valeur === 'false' || $valeur === 'FALSE'){ $selected='selected="selected"'; }
+                            if($valeur === false || $valeur === 0 || $valeur === 'false' || $valeur === 'FALSE' || $valeur === '0'){ $selected='selected="selected"'; }
                             echo '<option value="0" '.$selected.'>FALSE</option>';
                         echo '</select>';
                     }else if($type == 'array'){
