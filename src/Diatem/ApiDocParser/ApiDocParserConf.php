@@ -70,11 +70,13 @@ class ApiDocParserConf{
                 $content = $file->getContent();
 
                 $matches = array();
-                preg_match_all("/\/\*\*+(.*?)+\*\//s", $content, $matches, PREG_SET_ORDER);
+                preg_match_all("/\/\*\*(.*?)\*\//s", $content, $matches);
 
 
-                foreach($matches AS $match){
-                    $mContent = $match[0];
+                foreach($matches[0] AS $match){
+                    $mContent = $match;
+
+                    
                     
                     if(StringTools::contains($mContent, '@apiDefine')){
                         $define = true;
@@ -102,7 +104,7 @@ class ApiDocParserConf{
                                     if(StringTools::contains($lm[2][0],'(')){
                                         $dec = 1;
                                     }
-                                    $argument['type'] = str_replace(array('{','}'),'',$lm[2+$dec][0]);
+                                    $argument['type'] = StringTools::toLowerCase(str_replace(array('{','}'),'',$lm[2+$dec][0]));
         
                                     if(StringTools::contains($lm[3+$dec][0], '[')){
         
@@ -134,6 +136,8 @@ class ApiDocParserConf{
                     }
                 }
             }else if($f['type'] == 'endpoint'){
+                
+
                 $endPointName = StringTools::replaceLast($f['file'], '.php','');
                 $endpoint = array(
                     'name'  =>  $endPointName,
@@ -142,13 +146,13 @@ class ApiDocParserConf{
 
                 $file = new File(ApiDocParserRender::$folder.$f['file']);
                 $content = $file->getContent();
-
+                
                 $matches = array();
-                preg_match_all("/\/\*\*+(.*?)+\*\//s", $content, $matches, PREG_SET_ORDER);
+                preg_match_all("/\/\*\*(.*?)\*\//s", $content, $matches);
 
 
-                foreach($matches AS $match){
-                    $mContent = $match[0];
+                foreach($matches[0] AS $match){
+                    $mContent = $match;
                     
                     if(StringTools::contains($mContent, '@api')){
                         $method = array(
@@ -175,7 +179,7 @@ class ApiDocParserConf{
                                     if(StringTools::contains($lm[2][0],'(')){
                                         $dec = 1;
                                     }
-                                    $argument['type'] = str_replace(array('{','}'),'',$lm[2+$dec][0]);
+                                    $argument['type'] = StringTools::toLowerCase(str_replace(array('{','}'),'',$lm[2+$dec][0]));
         
                                     if(StringTools::contains($lm[3+$dec][0], '[')){
         
@@ -235,7 +239,6 @@ class ApiDocParserConf{
         $out->write(Json::encode($endpoints));
 
         self::$conf = $endpoints;
-    
     }
 
     private static function getDatasFromCache(){

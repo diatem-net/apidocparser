@@ -8,6 +8,7 @@ use Jin2\Utils\StringTools;
 use Jin2\Log\Debug;
 use Jin2\Com\Curl;
 use Jin2\DataFormat\Json;
+use Jin2\FileSystem\File;
 
 class ApiDocParserRender{
     public static $rootFolder;
@@ -15,9 +16,11 @@ class ApiDocParserRender{
     public static $url;
     public static $excludedFiles;
     public static $apiDefineDeclarationFile;
+    public static $useJinDump;
     private static $userName;
     private static $userKey;
     private static $jwt;
+    const maxSizeDump = 1000;
 
     /**
      * Initialise un applicatif
@@ -27,8 +30,9 @@ class ApiDocParserRender{
      * @param   string  userKey                     Clé utilisateur (pour authentification - si null pas d'authentification)
      * @param   string  apiDefineDeclarationFile    Chemin absolu du fichier des déclarations @apiDefine
      * @param   array   excludedFiles               Fichiers exclus de l'analyse
+     * @param   boolean useJinDump                  Utilisation de JIN pour les dumps de variables (false par défaut)
      */
-    public static function init($folder, $restUrl, $userName = null, $userKey = null, $apiDefineDeclarationFile = null, $excludedFiles = array()){
+    public static function init($folder, $restUrl, $userName = null, $userKey = null, $apiDefineDeclarationFile = null, $excludedFiles = array(), $useJinDump = false){
         self::$folder = $folder;
 
         self::$rootFolder = StringTools::replaceFirst(__FILE__, 'vendor/diatem-net/apidocparser/src/Diatem/ApiDocParser/ApiDocParserRender.php', '');
@@ -38,6 +42,7 @@ class ApiDocParserRender{
         self::$apiDefineDeclarationFile = $apiDefineDeclarationFile;
         self::$userName = $userName;
         self::$userKey = $userKey;
+        self::$useJinDump = $useJinDump;
         if(isset($_REQUEST['reload'])){
             ApiDocParserConf::load(true);
             header('Location: '.$_SERVER['PHP_SELF']);
@@ -133,7 +138,7 @@ class ApiDocParserRender{
         echo '<div class="container">';
         echo '<div class="col1">';
 
-        echo '<form method="POST" action="">';
+        echo '<form method="POST" action="" enctype="multipart/form-data">';
         echo '<input type="hidden" name="send" value="1">';
 
         if(count($methodData['urlargs']) > 0){
@@ -181,6 +186,8 @@ class ApiDocParserRender{
 
                     if($type == 'string'){
                         echo '<input type="text" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
+                    }elseif($type == 'file'){
+                            echo '<input type="file" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }else if($type == 'integer'){
                         echo '<input type="text" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }else if($type == 'boolean'){
@@ -246,6 +253,13 @@ class ApiDocParserRender{
                 if(is_array($json)){
                     $args[$arg['nom']] = $json;
                 }
+            }elseif($arg['type'] == 'file'){
+                $fData = $_FILES['argument?'.$arg['nom']];
+                $f = new File($fData['tmp_name']);
+                $args[$arg['nom']] = array(
+                    'fileName'      =>  $fData['name'],
+                    'fileContent'   =>  base64_encode($f->getBlob())
+                );
             }else{
                 $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
             }
@@ -270,7 +284,7 @@ class ApiDocParserRender{
 
         echo '<div class="code bloc"><h2>Arguments</h2>';
         echo '<pre>';
-        var_dump($args);
+        self::dump($args);
         echo '</pre>';
         echo '</div>';
         
@@ -305,13 +319,13 @@ class ApiDocParserRender{
         if($json){
             echo '<div class="code bloc"><h2>Retour JSON</h2>';
             echo '<pre>';
-            var_dump($json);
+            self::dump($json);
             echo '</pre>';
             echo '</div>';
         }else{
             echo '<div class="code bloc"><h2>Erreur d\'execution</h2>';
             echo '<pre>';
-            var_dump($res);
+            self::dump($res);
             echo '</pre>';
             echo '</div>';
         }
@@ -363,5 +377,13 @@ class ApiDocParserRender{
         }else{
             echo '<link href="/vendor/diatem-net/apidocparser/css/style.css" rel="stylesheet" type="text/css" />';
         } 
+    }
+
+    private static function dump($var){
+        if(self::$useJinDump){
+            Debug::dump($var, self::maxSizeDump);
+        }else{
+            var_dump($var);
+        }
     }
 }
