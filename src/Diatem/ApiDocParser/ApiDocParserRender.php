@@ -20,7 +20,7 @@ class ApiDocParserRender{
     private static $userName;
     private static $userKey;
     private static $jwt;
-    const maxSizeDump = 1000;
+    const maxSizeDump = 5000;
 
     /**
      * Initialise un applicatif
@@ -188,10 +188,15 @@ class ApiDocParserRender{
                         echo '<input type="text" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }elseif($type == 'file'){
                             echo '<input type="file" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
+                    }elseif($type == 'datetime'){
+                            echo '<input type="datetime-local" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
+                    }elseif($type == 'date'){
+                        echo '<input type="date" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }else if($type == 'integer'){
                         echo '<input type="text" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }else if($type == 'boolean'){
                         echo '<select name="argument?'.$argument['nom'].'">';
+                        echo '<option value="" '.$selected.'>NULL</option>';
                             $selected = '';
                             if($valeur === true || $valeur === 1 || $valeur === 'true' || $valeur === 'TRUE' || $valeur === '1'){ $selected='selected="selected"'; }
 
@@ -260,6 +265,12 @@ class ApiDocParserRender{
                     'fileName'      =>  $fData['name'],
                     'fileContent'   =>  base64_encode($f->getBlob())
                 );
+            }elseif($arg['type'] == 'datetime'){
+                $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
+                $args[$arg['nom']] = $dt->format('d/m/Y h:i:s');
+            }elseif($arg['type'] == 'date'){
+                $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
+                $args[$arg['nom']] = $dt->format('d/m/Y');
             }else{
                 $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
             }
