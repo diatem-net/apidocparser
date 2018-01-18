@@ -2,8 +2,9 @@
 
 namespace Diatem\ApiDocParser;
 
-use Diatem\ApiDocParser\ApiDocParserConf;
+use Diatem\ApiDocParser\ApiDocParserLoader;
 use Diatem\ApiDocParser\ApiDocParserRender;
+use Diatem\ApiDocParser\ApiDocParserConfig;
 use Jin2\Utils\StringTools;
 use Jin2\Log\Debug;
 use Jin2\Com\Curl;
@@ -11,43 +12,24 @@ use Jin2\DataFormat\Json;
 use Jin2\FileSystem\File;
 
 class ApiDocParserRender{
-    public static $rootFolder;
-    public static $folder;
-    public static $url;
-    public static $excludedFiles;
-    public static $apiDefineDeclarationFile;
-    public static $useJinDump;
-    private static $userName;
-    private static $userKey;
-    private static $jwt;
-    const maxSizeDump = 5000;
+    
 
     /**
      * Initialise un applicatif
      * @param   string  folder                      Chemin relatif vers le dossier à analyser
      * @param   string  restUrl                     Url de la racine des services REST
-     * @param   string  userName                    Nom d'utilisateur (pour authentification - si null pas d'authentification)
-     * @param   string  userKey                     Clé utilisateur (pour authentification - si null pas d'authentification)
-     * @param   string  apiDefineDeclarationFile    Chemin absolu du fichier des déclarations @apiDefine
-     * @param   array   excludedFiles               Fichiers exclus de l'analyse
-     * @param   boolean useJinDump                  Utilisation de JIN pour les dumps de variables (false par défaut)
      */
-    public static function init($folder, $restUrl, $userName = null, $userKey = null, $apiDefineDeclarationFile = null, $excludedFiles = array(), $useJinDump = false){
-        self::$folder = $folder;
-
-        self::$rootFolder = StringTools::replaceFirst(__FILE__, 'vendor/diatem-net/apidocparser/src/Diatem/ApiDocParser/ApiDocParserRender.php', '');
-        self::$folder = self::$rootFolder.$folder;
-        self::$url = $restUrl;
-        self::$excludedFiles = $excludedFiles;
-        self::$apiDefineDeclarationFile = $apiDefineDeclarationFile;
-        self::$userName = $userName;
-        self::$userKey = $userKey;
-        self::$useJinDump = $useJinDump;
+    public static function init($folder, $restUrl){
+        
+        ApiDocParserConfig::setUrl($restUrl);
+        ApiDocParserConfig::setRootFolder(StringTools::replaceFirst(__FILE__, 'vendor/diatem-net/apidocparser/src/Diatem/ApiDocParser/ApiDocParserRender.php', ''));
+        ApiDocParserConfig::setFolder(ApiDocParserConfig::$rootFolder.$folder);
+       
         if(isset($_REQUEST['reload'])){
-            ApiDocParserConf::load(true);
+            ApiDocParserLoader::load(true);
             header('Location: '.$_SERVER['PHP_SELF']);
         }else{
-            ApiDocParserConf::load();
+            ApiDocParserLoader::load();
         }
         self::rooting();
     }
@@ -83,7 +65,7 @@ class ApiDocParserRender{
         echo '</div>';
 
         echo '<div class="col1">';
-        foreach(ApiDocParserConf::$conf AS $endpointName => $endpoint){
+        foreach(ApiDocParserLoader::$conf AS $endpointName => $endpoint){
             echo '<div class="bloc">';
             echo '<h2><a href="?endpoint='.$endpointName.'">'.$endpoint['name'].'</a></h2>';
 
@@ -98,7 +80,7 @@ class ApiDocParserRender{
     }
 
     private static function render_endpoint($endpoint){
-        $endpointData = ApiDocParserConf::$conf[$endpoint];
+        $endpointData = ApiDocParserLoader::$conf[$endpoint];
 
         echo '<div class="head">';
         echo '<div class="infos">';
@@ -121,7 +103,7 @@ class ApiDocParserRender{
     }
 
     private static function render_method($endpoint, $methodId){
-        $endpointData = ApiDocParserConf::$conf[$endpoint];
+        $endpointData = ApiDocParserLoader::$conf[$endpoint];
         $methodData = $endpointData['methods'][$methodId];
 
         echo '<div class="head">';
@@ -229,7 +211,7 @@ class ApiDocParserRender{
         echo '</div>';
         echo '<div class="col2">';
             if(isset($_REQUEST['send'])){
-                if(self::$userKey){
+                if(ApiDocParserConfig::$userKey){
                     self::connect();
                 }
                 self::render_result($_REQUEST['endpoint'], $_REQUEST['method']);
@@ -239,20 +221,42 @@ class ApiDocParserRender{
     }
 
     private static function render_result($endpoint, $methodId){
-        $endpointData = ApiDocParserConf::$conf[$endpoint];
+        $endpointData = ApiDocParserLoader::$conf[$endpoint];
         $methodData = $endpointData['methods'][$methodId];
 
-        $url = self::$url.$methodData['url'];
+        $url = ApiDocParserConfig::$url.$methodData['url'];
         foreach($methodData['urlargs'] AS $urlarg){
             $url = StringTools::replaceFirst($url, $urlarg, $_REQUEST['url?'.$urlarg]);
         }
-        if(StringTools::right($url, 1) == '/'){
-            $url = StringTools::left($url, StringTools::len($url)-1);
+        if(ApiDocParserConfig::$useSlashEnd){
+            if(StringTools::right($url, 1) != '/'){
+                $url .= '/';
+            }
         }
+        
         
         $args = array();
         foreach($methodData['arguments'] AS $arg){
-            if($arg['type'] == 'array'){
+            if($arg['type'] == 'integer'){
+                if($_REQUEST['argument?'.$arg['nom']] === ''){
+                   
+                }else{
+                    $args[$arg['nom']] =  $_REQUEST['argument?'.$arg['nom']];
+                }
+                
+            }else if($arg['type'] == 'boolean'){
+                if($_REQUEST['argument?'.$arg['nom']] == ''){
+                    //$args[$arg['nom']] = null;
+                }else{
+                    $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
+                }
+            }else if($arg['type'] == 'string'){
+                if($_REQUEST['argument?'.$arg['nom']] == ''){
+                    //$args[$arg['nom']] = null;
+                }else{
+                    $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
+                }
+            }elseif($arg['type'] == 'array'){
                 $def = array();
                 $json = Json::decode($_REQUEST['argument?'.$arg['nom']]);
                 if(is_array($json)){
@@ -266,16 +270,26 @@ class ApiDocParserRender{
                     'fileContent'   =>  base64_encode($f->getBlob())
                 );
             }elseif($arg['type'] == 'datetime'){
-                $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
-                $args[$arg['nom']] = $dt->format('d/m/Y h:i:s');
+                if(!empty($_REQUEST['argument?'.$arg['nom']])){
+                    $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
+                    $args[$arg['nom']] = $dt->format('d/m/Y h:i:s');
+                }else{
+                    //$args[$arg['nom']] = null;
+                }
             }elseif($arg['type'] == 'date'){
-                $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
-                $args[$arg['nom']] = $dt->format('d/m/Y');
+                if(!empty($_REQUEST['argument?'.$arg['nom']])){
+                    $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
+                    $args[$arg['nom']] = $dt->format('d/m/Y');
+                }else{
+                    //$args[$arg['nom']] = null;
+                }
             }else{
                 $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
             }
             
         }
+
+        var_dump($args);
         
         if(StringTools::toLowerCase($methodData['method']) == 'get'){
             $requestType = Curl::CURL_REQUEST_TYPE_GET;
@@ -305,8 +319,8 @@ class ApiDocParserRender{
         $contentType = null;
         $headers = array();
 
-        if(self::$userKey){
-            $headers['Authorization'] = self::$jwt;
+        if(ApiDocParserConfig::$userKey){
+            $headers['Authorization'] = ApiDocParserConfig::$jwt;
         }
         
         $outputTraceFile = 'log.txt';
@@ -346,12 +360,13 @@ class ApiDocParserRender{
     }
 
     private static function connect(){
-        $url = self::$url.'login';
-        
+        $url = ApiDocParserConfig::$url.ApiDocParserConfig::$loginEndpoint;
+
         $args = array(
-            'userID'  =>  self::$userName,
-            'userKey' =>   self::$userKey
+            ApiDocParserConfig::$loginEndpointUserNameAttribute  =>  ApiDocParserConfig::$userName,
+            ApiDocParserConfig::$loginEndpointUserKeyAttribute =>   ApiDocParserConfig::$userKey
         );
+
         $requestType = Curl::CURL_REQUEST_TYPE_POST;
         $throwErrors = true;
         $httpAuthUser = null;
@@ -371,19 +386,19 @@ class ApiDocParserRender{
                     $headers, 
                     $outputTraceFile, 
                     $followLocation );
-        
         $res = json_decode($res, true);
+        var_dump($res);
         if(!isset($res['jwt'])){
             echo '<div class="erreur">Connexion impossible !</div>';
-            Debug::dump($res);
+        }else{
+            ApiDocParserConfig::$jwt = $res['jwt'];
         }
-        self::$jwt = $res['jwt'];
-        
+    
     }
 
     private static function render_css(){
         if(is_file(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css')){
-            $rel = StringTools::replaceFirst(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css', self::$rootFolder, '');
+            $rel = StringTools::replaceFirst(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css', ApiDocParserConfig::$rootFolder, '');
             echo '<link href="/'.$rel.'" rel="stylesheet" type="text/css" />';
         }else{
             echo '<link href="/vendor/diatem-net/apidocparser/css/style.css" rel="stylesheet" type="text/css" />';
@@ -391,8 +406,8 @@ class ApiDocParserRender{
     }
 
     private static function dump($var){
-        if(self::$useJinDump){
-            Debug::dump($var, self::maxSizeDump);
+        if(ApiDocParserConfig::$useJinDump){
+            Debug::dump($var, ApiDocParserConfig::$maxSizeDump);
         }else{
             var_dump($var);
         }
