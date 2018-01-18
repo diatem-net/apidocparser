@@ -359,7 +359,6 @@ class ApiDocParserRender{
     }
 
     private static function connect(){
-        echo 'connect';
 
         $url = ApiDocParserConfig::$url.ApiDocParserConfig::$loginEndpoint;
 
