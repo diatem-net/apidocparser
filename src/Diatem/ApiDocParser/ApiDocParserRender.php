@@ -289,7 +289,6 @@ class ApiDocParserRender{
             
         }
 
-        var_dump($args);
         
         if(StringTools::toLowerCase($methodData['method']) == 'get'){
             $requestType = Curl::CURL_REQUEST_TYPE_GET;
@@ -360,6 +359,8 @@ class ApiDocParserRender{
     }
 
     private static function connect(){
+        echo 'connect';
+
         $url = ApiDocParserConfig::$url.ApiDocParserConfig::$loginEndpoint;
 
         $args = array(
@@ -387,7 +388,7 @@ class ApiDocParserRender{
                     $outputTraceFile, 
                     $followLocation );
         $res = json_decode($res, true);
-        var_dump($res);
+ 
         if(!isset($res['jwt'])){
             echo '<div class="erreur">Connexion impossible !</div>';
         }else{
