@@ -28,6 +28,17 @@ class ApiDocParserConfig{
     public static $loginEndpoint = 'login';
     public static $loginEndpointUserNameAttribute = 'userID';
     public static $loginEndpointUserKeyAttribute = 'userKey';
+    public static $relativeStylePath = null;
+    public static $parserUrl = null;
+
+
+    public static function setParserUrl($parserUrl){
+        self::$parserUrl = $parserUrl;
+    }
+
+    public static function setRelativeStylePath($relativeStylePath){
+        self::$relativeStylePath = $relativeStylePath;
+    }
 
     public static function setLoginEndpointUserNameAttribute($attributeName){
         self::$loginEndpointUserNameAttribute = $attributeName;
