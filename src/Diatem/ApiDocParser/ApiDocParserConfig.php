@@ -28,17 +28,9 @@ class ApiDocParserConfig{
     public static $loginEndpoint = 'login';
     public static $loginEndpointUserNameAttribute = 'userID';
     public static $loginEndpointUserKeyAttribute = 'userKey';
-    public static $relativeStylePath = null;
-    public static $parserUrl = null;
-
-
-    public static function setParserUrl($parserUrl){
-        self::$parserUrl = $parserUrl;
-    }
-
-    public static function setRelativeStylePath($relativeStylePath){
-        self::$relativeStylePath = $relativeStylePath;
-    }
+    public static $version = 'v1.1.0';
+    public static $projectUrl = 'https://packagist.org/packages/diatem-net/apidocparser';
+    public static $themeFile = 'style_black.css';
 
     public static function setLoginEndpointUserNameAttribute($attributeName){
         self::$loginEndpointUserNameAttribute = $attributeName;
@@ -94,6 +86,10 @@ class ApiDocParserConfig{
 
     public static function setJWT($jwt){
         self::$jwt = $jwt;
+    }
+
+    public static function setStyle($style){
+        self::$themeFile = $style;
     }
 
     public static function setMaxSizeDump($maxSizeDump){

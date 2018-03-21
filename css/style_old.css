@@ -2,12 +2,21 @@
     display: flex;
 }
 
-.col1{
+.col1, .col1_full{
     width: 30%;
     height: calc(100% - 110px);
     overflow-y: scroll;
     top: 110px;
     position: fixed;
+    
+}
+
+.linemethod a{
+    display: flex;
+}
+
+h2{
+    display: flex;
 }
 
 .col2{
@@ -37,6 +46,7 @@ body{
     overflow: hidden;
     display: flex;
 }
+
 
 .head .liens{
     text-align: right;

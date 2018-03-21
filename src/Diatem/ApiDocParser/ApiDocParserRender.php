@@ -27,12 +27,7 @@ class ApiDocParserRender{
        
         if(isset($_REQUEST['reload'])){
             ApiDocParserLoader::load(true);
-            if(ApiDocParserConfig::$parserUrl){
-                header('Location: '.ApiDocParserConfig::$parserUrl);
-            }else{
-                header('Location: '.$_SERVER['PHP_SELF']);
-            }
-            
+            header('Location: '.$_SERVER['PHP_SELF']);
         }else{
             ApiDocParserLoader::load();
         }
@@ -60,23 +55,24 @@ class ApiDocParserRender{
     private static function render_root(){
     
         echo '<div class="head">';
-        echo '<div class="infos">';
+        echo '<div class="infos_singleLine">';
         echo '<h1>Endpoints</h1>';
-        echo '<a href="?reload=1">recharger le cache</a>';
         echo '</div>';
         echo '<div class="liens">';
         echo '<a href="'.$_SERVER['PHP_SELF'].'">endpoints</a>';
         echo '</div>';
         echo '</div>';
 
-        echo '<div class="col1">';
+        self::renderFooter();
+
+        echo '<div class="col1_full">';
         foreach(ApiDocParserLoader::$conf AS $endpointName => $endpoint){
             echo '<div class="bloc">';
-            echo '<h2><a href="?endpoint='.$endpointName.'">'.$endpoint['name'].'</a></h2>';
+            echo '<h2 class="endpointName method"><a href="?endpoint='.$endpointName.'">'.$endpoint['name'].'</a></h2>';
 
             foreach($endpoint['methods'] AS $methodId => $method){
-                echo '<div class="method">';
-                    echo '<a href="?endpoint='.$endpointName.'&method='.$methodId.'"><b>'.StringTools::toUpperCase($method['method']).'</b> - '.$method['url'].'</a>';
+                echo '<div class="linemethod">';
+                    echo '<a href="?endpoint='.$endpointName.'&method='.$methodId.'"><div class="method '.StringTools::toUpperCase($method['method']).'">'.StringTools::toUpperCase($method['method']).'</div><div class="methodName">'.$method['url'].'</div></a>';
                 echo '</div>';
             }
             echo '</div>';
@@ -88,7 +84,7 @@ class ApiDocParserRender{
         $endpointData = ApiDocParserLoader::$conf[$endpoint];
 
         echo '<div class="head">';
-        echo '<div class="infos">';
+        echo '<div class="infos_singleLine">';
         echo '<h1>'.$endpointData['name'].'</h1>';
         echo '</div>';
         echo '<div class="liens">';
@@ -96,11 +92,13 @@ class ApiDocParserRender{
         echo '</div>';
         echo '</div>';
 
-        echo '<div class="col1">';
+        self::renderFooter();
+
+        echo '<div class="col1_full">';
         echo '<div class="bloc">';
         foreach($endpointData['methods'] AS $methodId => $method){
-            echo '<div class="method">';
-                 echo '<a href="?endpoint='.$endpointData['name'].'&method='.$methodId.'"><b>'.StringTools::toUpperCase($method['method']).'</b> - '.$method['url'].'</a>';
+            echo '<div class="linemethod">';
+                 echo '<a href="?endpoint='.$endpointData['name'].'&method='.$methodId.'"><div class="method '.StringTools::toUpperCase($method['method']).'">'.StringTools::toUpperCase($method['method']).'</div><div class="methodName">'.$method['url'].'</div></a>';
             echo '</div>';
         }
         echo '</div>';
@@ -114,13 +112,14 @@ class ApiDocParserRender{
         echo '<div class="head">';
         echo '<div class="infos">';
         echo '<h1>'.$endpointData['name'].'</h1>';
-        echo '<h2>'.StringTools::toUpperCase($methodData['method']).' - '.$methodData['url'].'</h2>';
+        echo '<h2><div class="method '.StringTools::toUpperCase($methodData['method']).'" >'.StringTools::toUpperCase($methodData['method']).'</div> '.$methodData['url'].'</h2>';
         echo '</div>';
         echo '<div class="liens">';
         echo '<a href="'.$_SERVER['PHP_SELF'].'">endpoints</a> / <a href="?endpoint='.$endpoint.'">'.$endpointData['name'].'</a> / <a href="?endpoint='.$endpoint.'&method='.$methodId.'">'.StringTools::toUpperCase($methodData['method']).' - '.$methodData['url'].'</a>';
         echo '</div>';
         echo '</div>';
 
+       
 
         echo '<div class="container">';
         echo '<div class="col1">';
@@ -293,7 +292,6 @@ class ApiDocParserRender{
             }
             
         }
-
         
         if(StringTools::toLowerCase($methodData['method']) == 'get'){
             $requestType = Curl::CURL_REQUEST_TYPE_GET;
@@ -309,7 +307,7 @@ class ApiDocParserRender{
 
         echo '<div class="call">';
 
-        echo '<div class="url bloc"><h2>Url appelée</h2>'.$url.'</div>';
+        echo '<div class="url bloc"><h2>Url appelée</h2><div class="method '.StringTools::toUpperCase($methodData['method']).'">'.StringTools::toUpperCase($methodData['method']).'</div>  <div class="method">'.$url.'</div></div>';
 
         echo '<div class="code bloc"><h2>Arguments</h2>';
         echo '<pre>';
@@ -342,7 +340,7 @@ class ApiDocParserRender{
                     $followLocation );
         
 
-        echo '<div class="code bloc"><h2>Code HTTP de retour</h2>'.Curl::getLastHttpCode().'</div>';
+        echo '<div class="code bloc"><h2>Code HTTP de retour</h2><div class="method code code_'.Curl::getLastHttpCode().'"><b>'.Curl::getLastHttpCode().'</b></div></div>';
         
         $json = json_decode($res);
         if($json){
@@ -364,7 +362,6 @@ class ApiDocParserRender{
     }
 
     private static function connect(){
-
         $url = ApiDocParserConfig::$url.ApiDocParserConfig::$loginEndpoint;
 
         $args = array(
@@ -392,7 +389,7 @@ class ApiDocParserRender{
                     $outputTraceFile, 
                     $followLocation );
         $res = json_decode($res, true);
- 
+
         if(!isset($res['jwt'])){
             echo '<div class="erreur">Connexion impossible !</div>';
         }else{
@@ -402,21 +399,28 @@ class ApiDocParserRender{
     }
 
     private static function render_css(){
-        if(ApiDocParserConfig::$relativeStylePath){
-            echo '<link href="'.ApiDocParserConfig::$relativeStylePath.'" rel="stylesheet" type="text/css" />';
-        }else if(is_file(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css')){
+        if(is_file(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css')){
             $rel = StringTools::replaceFirst(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css', ApiDocParserConfig::$rootFolder, '');
             echo '<link href="/'.$rel.'" rel="stylesheet" type="text/css" />';
         }else{
-            echo '<link href="/vendor/diatem-net/apidocparser/css/style.css" rel="stylesheet" type="text/css" />';
+            echo '<link href="/vendor/diatem-net/apidocparser/css/'.ApiDocParserConfig::$themeFile.'" rel="stylesheet" type="text/css" />';
         } 
+    }
+
+    private static function renderFooter(){
+        echo '<div class="footer">';
+        echo '<div class="appInfo method"><a target="_blank" href="'.ApiDocParserConfig::$projectUrl.'">apidocparser '.ApiDocParserConfig::$version.'</a></div> ';
+        echo '<div class="reload"><a href="?reload=1">recharger le cache</a></div>';
+        echo '</div>';
     }
 
     private static function dump($var){
         if(ApiDocParserConfig::$useJinDump){
             Debug::dump($var, ApiDocParserConfig::$maxSizeDump);
         }else{
+            echo '<div class="intDump">';
             var_dump($var);
+            echo '</div>';
         }
     }
 }
