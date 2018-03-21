@@ -31,6 +31,17 @@ class ApiDocParserConfig{
     public static $version = 'v1.1.0';
     public static $projectUrl = 'https://packagist.org/packages/diatem-net/apidocparser';
     public static $themeFile = 'style_black.css';
+    public static $relativeStylePath = null;
+    public static $parserUrl = null;
+    
+    
+    public static function setParserUrl($parserUrl){
+        self::$parserUrl = $parserUrl;
+    }
+
+    public static function setRelativeStylePath($relativeStylePath){
+        self::$relativeStylePath = $relativeStylePath;
+    }
 
     public static function setLoginEndpointUserNameAttribute($attributeName){
         self::$loginEndpointUserNameAttribute = $attributeName;

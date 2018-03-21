@@ -27,7 +27,11 @@ class ApiDocParserRender{
        
         if(isset($_REQUEST['reload'])){
             ApiDocParserLoader::load(true);
-            header('Location: '.$_SERVER['PHP_SELF']);
+            if(ApiDocParserConfig::$parserUrl){
+                header('Location: '.ApiDocParserConfig::$parserUrl);
+            }else{
+                header('Location: '.$_SERVER['PHP_SELF']);
+            }
         }else{
             ApiDocParserLoader::load();
         }
@@ -399,8 +403,10 @@ class ApiDocParserRender{
     }
 
     private static function render_css(){
-        if(is_file(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css')){
-            $rel = StringTools::replaceFirst(dirname($_SERVER['SCRIPT_FILENAME']).'/style.css', ApiDocParserConfig::$rootFolder, '');
+        if(ApiDocParserConfig::$relativeStylePath){
+             echo '<link href="'.ApiDocParserConfig::$relativeStylePath.'" rel="stylesheet" type="text/css" />';
+        }else if(is_file(dirname($_SERVER['SCRIPT_FILENAME']).'/'.ApiDocParserConfig::$themeFile)){
+            $rel = StringTools::replaceFirst(dirname($_SERVER['SCRIPT_FILENAME']).'/'.ApiDocParserConfig::$themeFile, ApiDocParserConfig::$rootFolder, '');
             echo '<link href="/'.$rel.'" rel="stylesheet" type="text/css" />';
         }else{
             echo '<link href="/vendor/diatem-net/apidocparser/css/'.ApiDocParserConfig::$themeFile.'" rel="stylesheet" type="text/css" />';
