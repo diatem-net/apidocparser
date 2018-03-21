@@ -119,7 +119,7 @@ class ApiDocParserRender{
         echo '</div>';
         echo '</div>';
 
-       
+        self::renderFooter();
 
         echo '<div class="container">';
         echo '<div class="col1">';
