@@ -247,7 +247,7 @@ class ApiDocParserLoader{
                             $method['urlargs'][] = $r[0];
                         }
         
-                        $id = $method['url'];
+                        $id =  $method['method'].'-'.$method['url'];
                         
                         $endpoints[$endpoint]['methods'][$id] = $method;
                         
