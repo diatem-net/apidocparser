@@ -30,7 +30,7 @@
 }
 
 .col1_full .bloc{
-    width: 300px;
+    width: 100%;
     margin: 10px;
     overflow: hidden;
 }
