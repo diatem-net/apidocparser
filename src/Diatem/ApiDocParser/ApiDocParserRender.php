@@ -280,7 +280,7 @@ class ApiDocParserRender{
             }elseif($arg['type'] == 'datetime'){
                 if(!empty($_REQUEST['argument?'.$arg['nom']])){
                     $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);
-                    $args[$arg['nom']] = $dt->format('d/m/Y h:i:s');
+                    $args[$arg['nom']] = $dt->format('d/m/Y H:i:s');
                 }else{
                     //$args[$arg['nom']] = null;
                 }
