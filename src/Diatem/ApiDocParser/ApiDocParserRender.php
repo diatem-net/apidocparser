@@ -10,6 +10,7 @@ use Jin2\Log\Debug;
 use Jin2\Com\Curl;
 use Jin2\DataFormat\Json;
 use Jin2\FileSystem\File;
+use Jin2\Image\Image;
 
 class ApiDocParserRender{
     
@@ -178,6 +179,8 @@ class ApiDocParserRender{
                         echo '<input type="text" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }elseif($type == 'file'){
                             echo '<input type="file" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
+                    }elseif($type == 'base64'){
+                            echo '<input type="file" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }elseif($type == 'datetime'){
                             echo '<input type="datetime-local" name="argument?'.$argument['nom'].'" value="'.$valeur.'">';
                     }elseif($type == 'date'){
@@ -258,6 +261,20 @@ class ApiDocParserRender{
                 }else{
                     $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
                 }
+            }else if($arg['type'] == 'base64'){
+                if($_FILES['argument?'.$arg['nom']]['name'] != ''){
+                    $fData = $_FILES['argument?'.$arg['nom']];
+                    //$obj = new Image($fData['tmp_name']);
+
+                    $f = new File($fData['tmp_name']);
+                    rename($fData['tmp_name'], $fData['name']);
+
+                    $obj = new Image($fData['name']);
+
+                    $args[$arg['nom']] = $obj->getBase64();
+
+                    unlink( $fData['name']);
+                }
             }else if($arg['type'] == 'string'){
                 if($_REQUEST['argument?'.$arg['nom']] == ''){
                     //$args[$arg['nom']] = null;
@@ -313,9 +330,16 @@ class ApiDocParserRender{
 
         echo '<div class="url bloc"><h2>Url appelée</h2><div class="method '.StringTools::toUpperCase($methodData['method']).'">'.StringTools::toUpperCase($methodData['method']).'</div>  <div class="method">'.$url.'</div></div>';
 
+        $argsAff = $args;
+        foreach($methodData['arguments'] AS $arg){
+            if($arg['type'] == 'base64' && $_FILES['argument?'.$arg['nom']]['name'] != ''){
+                $argsAff[$arg['nom']] = '<IMGBASE64>';
+            }
+        }
+
         echo '<div class="code bloc"><h2>Arguments</h2>';
         echo '<pre>';
-        self::dump($args);
+        self::dump($argsAff);
         echo '</pre>';
         echo '</div>';
         

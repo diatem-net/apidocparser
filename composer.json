@@ -6,7 +6,8 @@
         "diatem-net/jin-filesystem": "^2.0",
 		"diatem-net/jin-utils": "^2.0",
 		"diatem-net/jin-dataformat": "^2.0",
-		"diatem-net/jin-log": "^2.0"
+		"diatem-net/jin-log": "^2.0",
+		"diatem-net/jin-image": "^2.0"
     },
     "authors": [
         {
