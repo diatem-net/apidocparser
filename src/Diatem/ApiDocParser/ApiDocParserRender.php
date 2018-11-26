@@ -289,11 +289,15 @@ class ApiDocParserRender{
                 }
             }elseif($arg['type'] == 'file'){
                 $fData = $_FILES['argument?'.$arg['nom']];
-                $f = new File($fData['tmp_name']);
-                $args[$arg['nom']] = array(
-                    'fileName'      =>  $fData['name'],
-                    'fileContent'   =>  base64_encode($f->getBlob())
-                );
+                if(is_file($fData['tmp_name'])){
+                    $f = new File($fData['tmp_name']);
+                    $args[$arg['nom']] = array(
+                        'fileName'      =>  $fData['name'],
+                        'fileContent'   =>  base64_encode($f->getBlob())
+                    );
+                }else{
+                    $args[$arg['nom']] = null;
+                }
             }elseif($arg['type'] == 'datetime'){
                 if(!empty($_REQUEST['argument?'.$arg['nom']])){
                     $dt = new \DateTime($_REQUEST['argument?'.$arg['nom']]);

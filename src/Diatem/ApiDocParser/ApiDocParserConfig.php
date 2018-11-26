@@ -28,7 +28,7 @@ class ApiDocParserConfig{
     public static $loginEndpoint = 'login';
     public static $loginEndpointUserNameAttribute = 'userID';
     public static $loginEndpointUserKeyAttribute = 'userKey';
-    public static $version = 'v1.4.1';
+    public static $version = 'v1.4.2';
     public static $projectUrl = 'https://packagist.org/packages/diatem-net/apidocparser';
     public static $themeFile = 'style_black.css';
     public static $relativeStylePath = null;
