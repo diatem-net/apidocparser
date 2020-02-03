@@ -176,7 +176,8 @@ class ApiDocParserLoader{
                             'method'        =>  '',
                             'url'           =>  '',
                             'arguments'     =>  array(),
-                            'urlargs'       =>  array()
+                            'urlargs'       =>  array(),
+                            'apiAuthMethod' =>  'none'
                         );
         
                         $lines = explode("\n", $mContent);
@@ -185,7 +186,9 @@ class ApiDocParserLoader{
                             preg_match_all("/(\S+)/", $line, $lm, PREG_SET_ORDER);
         
                             if(count($lm) >= 2){
-                                if($lm[1][0] == '@apiGroup'){
+                                if($lm[1][0] == '@apiAuthMethod'){
+                                    $method['apiAuthMethod'] = $lm[2][0];
+                                }elseif($lm[1][0] == '@apiGroup'){
                                     $endpoint = $lm[2][0];
 
                                     if(!isset($endpoints[$endpoint])){

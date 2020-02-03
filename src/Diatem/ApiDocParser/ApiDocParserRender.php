@@ -11,6 +11,7 @@ use Jin2\Com\Curl;
 use Jin2\DataFormat\Json;
 use Jin2\FileSystem\File;
 use Jin2\Image\Image;
+use Jin2\Utils\ListTools;
 
 class ApiDocParserRender{
     
@@ -150,6 +151,27 @@ class ApiDocParserRender{
             echo '</div>';
         }
 
+        echo '<div class="auth_method arguments bloc">';
+            echo '<h2>Authentification</h2>';
+            
+           
+                        echo '<select name="authmethod">';
+                            $methods = ApiDocParserConfig::$authentificateAllowedMethods;
+                            foreach($methods AS $method):
+                                $selected = '';
+                                if(isset($_REQUEST['authmethod']) && $_REQUEST['authmethod'] == $method){
+                                    $selected = 'selected';
+                                }else if(!isset($_REQUEST['authmethod']) && $methodData['apiAuthMethod'] == $method){
+                                    $selected = 'selected';
+                                }else if(!isset($_REQUEST['authmethod']) && $method == ApiDocParserConfig::$authentificatePreferedMethod){
+                                    $selected = 'selected';
+                                }
+                                echo '<option value="'.$method.'" '.$selected.'>'.ApiDocParserConfig::getAuthentificateMethodName($method).'</option>';
+                            endforeach;
+                        echo '</select>';
+
+        echo '</div>';
+
         if(count($methodData['arguments']) > 0){
             echo '<div class="arguments bloc">';
                 echo '<h2>Arguments</h2>';
@@ -222,9 +244,14 @@ class ApiDocParserRender{
         echo '</div>';
         echo '<div class="col2">';
             if(isset($_REQUEST['send'])){
-                if(ApiDocParserConfig::$userKey){
-                    self::connect();
+                if($_REQUEST['authmethod'] == 'Inherit'){
+                    self::connectInherit();
+                }else if($_REQUEST['authmethod'] == 'Basic'){
+
+                }else if($_REQUEST['authmethod'] == 'Bearer'){
+                    self::connectBearer();
                 }
+
                 self::render_result($_REQUEST['endpoint'], $_REQUEST['method']);
             }
         echo '</div>';
@@ -276,8 +303,9 @@ class ApiDocParserRender{
                     unlink( $fData['name']);
                 }
             }else if($arg['type'] == 'string'){
-                if($_REQUEST['argument?'.$arg['nom']] == ''){
-                    //$args[$arg['nom']] = null;
+                if($_REQUEST['argument?'.$arg['nom']] == '<EMPTY>'){
+                    $args[$arg['nom']] = '';
+                }else if($_REQUEST['argument?'.$arg['nom']] == ''){
                 }else{
                     $args[$arg['nom']] = $_REQUEST['argument?'.$arg['nom']];
                 }
@@ -341,11 +369,7 @@ class ApiDocParserRender{
             }
         }
 
-        echo '<div class="code bloc"><h2>Arguments</h2>';
-        echo '<pre>';
-        self::dump($argsAff);
-        echo '</pre>';
-        echo '</div>';
+        
         
         $throwErrors = true;
         $httpAuthUser = null;
@@ -353,9 +377,28 @@ class ApiDocParserRender{
         $contentType = null;
         $headers = array();
 
-        if(ApiDocParserConfig::$userKey){
+
+
+        if($_REQUEST['authmethod'] == 'Inherit'){
             $headers['Authorization'] = ApiDocParserConfig::$jwt;
+        }else if($_REQUEST['authmethod'] == 'Basic'){
+            $headers['Authorization'] = 'Basic '.base64_encode(ApiDocParserConfig::$userName.':'.ApiDocParserConfig::$userKey);
+        }else if($_REQUEST['authmethod'] == 'Bearer'){
+            $headers['Authorization'] = 'Bearer '.ApiDocParserConfig::$jwt;
         }
+
+
+        echo '<div class="code bloc"><h2>Headers</h2>';
+        echo '<pre>';
+        self::dump($headers);
+        echo '</pre>';
+        echo '</div>';
+
+        echo '<div class="code bloc"><h2>Arguments</h2>';
+        echo '<pre>';
+        self::dump($argsAff);
+        echo '</pre>';
+        echo '</div>';
         
         $outputTraceFile = 'log.txt';
         $followLocation = false;
@@ -393,7 +436,58 @@ class ApiDocParserRender{
         
     }
 
-    private static function connect(){
+    private static function connectBearer(){
+
+        $url = ApiDocParserConfig::$bearerEndpoint;
+        $args = ApiDocParserConfig::$bearerArguments;
+        $requestType = Curl::CURL_REQUEST_TYPE_GET;
+        if(ApiDocParserConfig::$bearerEndpointCallType == 'POST'){
+            $requestType = Curl::CURL_REQUEST_TYPE_POST;
+        }else if(ApiDocParserConfig::$bearerEndpointCallType == 'PATCH'){
+            $requestType = Curl::CURL_REQUEST_TYPE_PATCH;
+        }elseif(ApiDocParserConfig::$bearerEndpointCallType == 'PUT'){
+            $requestType = Curl::CURL_REQUEST_TYPE_PUT;
+        }
+
+
+        $throwErrors = true;
+        $httpAuthUser = null;
+        $httpAuthPassword = null;
+        $contentType = null;
+        $headers = ApiDocParserConfig::$bearerEndpointHeaders;
+        $outputTraceFile = 'log.txt';
+        $followLocation = false;
+        
+        $res = Curl::call( $url, 
+                    $args, 
+                    $requestType,
+                    $throwErrors, 
+                    $httpAuthUser, 
+                    $httpAuthPassword, 
+                    $contentType, 
+                    $headers, 
+                    $outputTraceFile, 
+                    $followLocation );
+        $resBefore = $res;
+        $res = json_decode($res, true);
+
+        if(!isset($res)){
+            echo '<div class="erreur">Connexion impossible !</div>';
+            var_dump($resBefore);
+            exit;
+        }else{
+            $links = ListTools::toArray(ApiDocParserConfig::$bearerTokenReturnStructure, '/');
+            $obj = $res;
+            foreach($links AS $link){
+                $obj = $obj[$link];
+            }
+
+            ApiDocParserConfig::$jwt = $obj;
+        }
+    
+    }
+
+    private static function connectInherit(){
         $url = ApiDocParserConfig::$url.ApiDocParserConfig::$loginEndpoint;
 
         $args = array(
@@ -421,6 +515,8 @@ class ApiDocParserRender{
                     $outputTraceFile, 
                     $followLocation );
         $res = json_decode($res, true);
+
+ 
 
         if(!isset($res['jwt'])){
             echo '<div class="erreur">Connexion impossible !</div>';

@@ -28,12 +28,54 @@ class ApiDocParserConfig{
     public static $loginEndpoint = 'login';
     public static $loginEndpointUserNameAttribute = 'userID';
     public static $loginEndpointUserKeyAttribute = 'userKey';
-    public static $version = 'v1.4.2';
+    public static $version = 'v1.5.0';
     public static $projectUrl = 'https://packagist.org/packages/diatem-net/apidocparser';
     public static $themeFile = 'style_black.css';
     public static $relativeStylePath = null;
     public static $parserUrl = null;
+    public static $bearerEndpoint = null;
+    public static $bearerArguments = array();
+    public static $bearerTokenReturnStructure = '';
+    public static $bearerEndpointCallType = 'POST';
+    public static $bearerEndpointHeaders = array();
+    public static $authentificateAllowedMethods = array('Basic', 'Bearer', 'None', 'Inherit');
+    public static $authentificatePreferedMethod = 'basic';
+
+    public static function getAuthentificateMethodName($method){
+        if($method == 'None'){
+            return 'Aucune';
+        }else if($method == 'Basic'){
+            return 'Basic';
+        }else if($method == 'Bearer'){
+            return 'Bearer';
+        }else if($method == 'Inherit'){
+            return 'Ancienne versions Diatem RestServer (depreciated)';
+        }
+    }
     
+    public static function setAuthentificateAllowedMethods($methods){
+        self::$authentificateAllowedMethods = $methods;
+    }
+
+    public static function setAuthentificatePreferedMethod($method){
+        self::$authentificatePreferedMethod = $method;
+    }
+
+    /**
+     * Définit les paramètres d'accès au endpoint permettant de créer un token Bearer d'authentification
+     * @param   string  $endpoint               Url complète d'accès au endpoint (absolue)
+     * @param   string  $endpointCallType       Méthode (POST, GET, PUT ou PATCH)
+     * @param   array   $arguments              Arguments (tableau associatif)
+     * @param   string  $tokenReturnStructure   Chemin pour trouver le token dans la structure de retour (utiliser '/' comme définissant un niveau inférieur)
+     * @param   array   $bearerEndpointHeaders  Headers transmis (tableau associatif, utilisé par exemple pour transmettre une authentification de type "Basic")
+     */
+    public static function setBearerEndpoint($endpoint, $endpointCallType, $arguments, $tokenReturnStructure, $bearerEndpointHeaders){
+        self::$bearerEndpoint = $endpoint;
+        self::$bearerArguments = $arguments;
+        self::$bearerTokenReturnStructure = $tokenReturnStructure;
+        self::$bearerEndpointCallType = $endpointCallType;
+        self::$bearerEndpointHeaders = $bearerEndpointHeaders;
+    }
     
     public static function setParserUrl($parserUrl){
         self::$parserUrl = $parserUrl;
