@@ -5,6 +5,7 @@ namespace Diatem\ApiDocParser;
 use Diatem\ApiDocParser\ApiDocParserLoader;
 use Diatem\ApiDocParser\ApiDocParserRender;
 use Diatem\ApiDocParser\ApiDocParserConfig;
+use Diatem\ApiDocParser\JsonFormatter;
 use Jin2\Utils\StringTools;
 use Jin2\Log\Debug;
 use Jin2\Com\Curl;
@@ -133,6 +134,7 @@ class ApiDocParserRender{
         echo '<form method="POST" action="" enctype="multipart/form-data">';
         echo '<input type="hidden" name="send" value="1">';
 
+        
         if(count($methodData['urlargs']) > 0){
             echo '<div class="url bloc">';
                 echo '<h2>Url</h2>';
@@ -150,6 +152,8 @@ class ApiDocParserRender{
                 echo '</div>';
             echo '</div>';
         }
+
+        
 
         echo '<div class="auth_method arguments bloc">';
             echo '<h2>Authentification</h2>';
@@ -171,6 +175,17 @@ class ApiDocParserRender{
                         echo '</select>';
 
         echo '</div>';
+
+        if(ApiDocParserConfig::$jsonFormatOutputEnabled){
+            echo '<div class="url bloc jsonformat">';
+                $checked = '';
+                if(isset($_REQUEST['outputjsonformat'])){
+                    $checked = 'checked="checked"';
+                }
+                echo '<input type="checkbox" class="checkbox" name="outputjsonformat" value="1" '.$checked.'>Effectuer un enregistrement du fichier de définition du format';
+                
+            echo '</div>';
+        }
 
         if(count($methodData['arguments']) > 0){
             echo '<div class="arguments bloc">';
@@ -243,6 +258,7 @@ class ApiDocParserRender{
 
         echo '</div>';
         echo '<div class="col2">';
+
             if(isset($_REQUEST['send'])){
                 if($_REQUEST['authmethod'] == 'Inherit'){
                     self::connectInherit();
@@ -271,6 +287,7 @@ class ApiDocParserRender{
                 $url .= '/';
             }
         }
+
         
         
         $args = array();
@@ -345,6 +362,8 @@ class ApiDocParserRender{
             }
             
         }
+
+       
         
         if(StringTools::toLowerCase($methodData['method']) == 'get'){
             $requestType = Curl::CURL_REQUEST_TYPE_GET;
@@ -402,6 +421,7 @@ class ApiDocParserRender{
         
         $outputTraceFile = 'log.txt';
         $followLocation = false;
+
         
         $res = Curl::call( $url, 
                     $args, 
@@ -419,6 +439,28 @@ class ApiDocParserRender{
         
         $json = json_decode($res);
         if($json){
+
+            if(ApiDocParserConfig::$jsonFormatOutputEnabled && isset($_REQUEST['outputjsonformat'])){
+                $jsonF = new JsonFormatter($res);
+                $jsonoOutFormat = json_encode($jsonF->convert(), JSON_PRETTY_PRINT);
+
+                
+                $bUrl = StringTools::replaceAll($url, ApiDocParserConfig::$url, '');
+                if(StringTools::right($bUrl, 1) == '/'){
+                    $bUrl = StringTools::replaceLast($bUrl, '/', '');
+                }
+                $endUrl = $methodData['method'].'-'.StringTools::replaceAll($bUrl, '/', '-');
+
+                $f = new File(ApiDocParserConfig::$jsonFormatOutputRootPath.$endUrl.'.json', true);
+                $f->write($jsonoOutFormat);
+
+                echo '<div class="code bloc"><h2>Fichier de définition JSON</h2>';
+                echo '<pre>';
+                echo 'Ecrit : '.ApiDocParserConfig::$jsonFormatOutputRootPath.$endUrl.'.json';
+                echo '</pre>';
+                echo '</div>';
+            }
+
             echo '<div class="code bloc"><h2>Retour JSON</h2>';
             echo '<pre>';
             self::dump($json);
@@ -437,7 +479,6 @@ class ApiDocParserRender{
     }
 
     private static function connectBearer(){
-
         $url = ApiDocParserConfig::$bearerEndpoint;
         $args = ApiDocParserConfig::$bearerArguments;
         $requestType = Curl::CURL_REQUEST_TYPE_GET;
@@ -449,7 +490,7 @@ class ApiDocParserRender{
             $requestType = Curl::CURL_REQUEST_TYPE_PUT;
         }
 
-
+        
         $throwErrors = true;
         $httpAuthUser = null;
         $httpAuthPassword = null;
@@ -457,7 +498,7 @@ class ApiDocParserRender{
         $headers = ApiDocParserConfig::$bearerEndpointHeaders;
         $outputTraceFile = 'log.txt';
         $followLocation = false;
-        
+
         $res = Curl::call( $url, 
                     $args, 
                     $requestType,
@@ -514,12 +555,15 @@ class ApiDocParserRender{
                     $headers, 
                     $outputTraceFile, 
                     $followLocation );
+        $resBefore = $res;
         $res = json_decode($res, true);
 
  
 
         if(!isset($res['jwt'])){
             echo '<div class="erreur">Connexion impossible !</div>';
+            var_dump($resBefore);
+            exit;
         }else{
             ApiDocParserConfig::$jwt = $res['jwt'];
         }

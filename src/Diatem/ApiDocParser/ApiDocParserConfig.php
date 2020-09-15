@@ -40,6 +40,8 @@ class ApiDocParserConfig{
     public static $bearerEndpointHeaders = array();
     public static $authentificateAllowedMethods = array('Basic', 'Bearer', 'None', 'Inherit');
     public static $authentificatePreferedMethod = 'basic';
+    public static $jsonFormatOutputEnabled = false;
+    public static $jsonFormatOutputRootPath = '';
 
     public static function getAuthentificateMethodName($method){
         if($method == 'None'){
@@ -147,5 +149,13 @@ class ApiDocParserConfig{
 
     public static function setMaxSizeDump($maxSizeDump){
         self::$maxSizeDump = $maxSizeDump;
+    }
+
+    public static function setJsonFormatOutputEnabled($jsonFormatOutputEnabled){
+        self::$jsonFormatOutputEnabled = $jsonFormatOutputEnabled;
+    }
+
+    public static function setJsonFormatOutputRootPath($jsonFormatOutputRootPath){
+        self::$jsonFormatOutputRootPath = $jsonFormatOutputRootPath;
     }
 }
